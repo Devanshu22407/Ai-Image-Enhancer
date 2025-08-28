@@ -1,0 +1,21 @@
+.magnifier-container {
+  position: relative;
+  display: inline-block;
+}
+
+.magnifier-image {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+
+.magnifier-lens {
+  position: absolute; 
+  pointer-events: none;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  z-index: 9999; 
+  background-repeat: no-repeat;
+  transition: top 0.02s, left 0.02s; 
+}
