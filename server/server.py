@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)  # allow requests from React frontend
 
 # Load RealESRGAN model once when server starts
-model_path = "C:\\Users\\DEVANSHU\\Downloads\\ai-image-enhancer\\server\\weights\\RealESRGAN_x4plus.pth"
+model_path = "D:\\Sem_5\\Project_2\\ai-image-enhancer\\server\\weights\\RealESRGAN_x4plus.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64,

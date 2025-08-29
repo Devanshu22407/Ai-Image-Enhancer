@@ -6,7 +6,7 @@ import "./App.css";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 export default function App() {
-  const location = useLocatisvvswedvon();
+  const location = useLocation();
 
   return (
     <div className="site-shell">
