@@ -25,7 +25,7 @@ export default function App() {
       </nav>
 
       <main className="main">
-        {/* Routes are outside TransitionGroup */}
+        
         <Routes location={location}>
           <Route
             path="/"

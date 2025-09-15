@@ -10,9 +10,9 @@ from realesrgan import RealESRGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
 
 app = Flask(__name__)
-CORS(app)  # allow requests from React frontend
+CORS(app)  
 
-# Load RealESRGAN model once when server starts
+
 model_path = "D:\\Sem_5\\Project_2\\ai-image-enhancer\\server\\weights\\RealESRGAN_x4plus.pth"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -38,13 +38,13 @@ def enhance():
     file = request.files["file"]
     img = Image.open(file.stream).convert("RGB")
 
-    # Run enhancement
+    
     output, _ = upsampler.enhance(np.array(img), outscale=4)
 
-    # Convert back to image
+    
     output_img = Image.fromarray(output)
 
-    # Save to buffer
+    
     buffered = io.BytesIO()
     output_img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
