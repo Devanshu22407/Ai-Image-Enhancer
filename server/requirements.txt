@@ -5,3 +5,5 @@ numpy
 Pillow
 realesrgan
 basicsr
+reportlab
+flask
