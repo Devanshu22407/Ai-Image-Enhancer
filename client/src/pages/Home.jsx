@@ -280,11 +280,37 @@ export default function Home() {
   };
 
   return (
-    <div className="container fade-in">
-      <section className="hero">
-        <h1>Enhance Images with AI</h1>
-        <p>Sharper details, reduced noise, and better clarity — instantly.</p>
-      </section>
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-white to-blue-50 relative text-gray-800">
+      {/* Enhanced Zigzag Lightning Pattern */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(102, 126, 234, 0.02) 60px, rgba(102, 126, 234, 0.02) 61px),
+            repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(118, 75, 162, 0.015) 80px, rgba(118, 75, 162, 0.015) 81px),
+            repeating-linear-gradient(45deg, transparent, transparent 100px, rgba(244, 147, 251, 0.01) 100px, rgba(244, 147, 251, 0.01) 101px),
+            repeating-linear-gradient(135deg, transparent, transparent 120px, rgba(102, 126, 234, 0.008) 120px, rgba(102, 126, 234, 0.008) 121px)
+          `,
+          opacity: 0.6,
+        }}
+      />
+      {/* Subtle Gradient Overlay */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(244, 147, 251, 0.02) 0%, transparent 50%),
+            radial-gradient(circle at 40% 60%, rgba(118, 75, 162, 0.015) 0%, transparent 50%)
+          `,
+        }}
+      />
+      {/* Content */}
+      <div className="container fade-in relative z-10">
+        <section className="hero">
+          <h1>Enhance Images with AI</h1>
+          <p>Sharper details, reduced noise, and better clarity — instantly.</p>
+        </section>
 
       <section className="upload-section">
         <div
@@ -402,11 +428,14 @@ export default function Home() {
             {loading ? "Enhancing…" : "Enhance Image"}
           </button>
           <button
-            className="btn secondary"
+            className="button"
             onClick={resetAll}
             disabled={loading && !enhancedImage}
+            title="Reset"
           >
-            Reset
+            <svg className="svgIcon" viewBox="0 0 448 512">
+              <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path>
+            </svg>
           </button>
         </div>
       </section>
@@ -483,6 +512,7 @@ export default function Home() {
           )}
         </section>
       )}
+      </div>
     </div>
   );
 }
