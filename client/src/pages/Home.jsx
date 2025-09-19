@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
 import Magnifier from "../components/Magnifier.jsx";
 
@@ -8,18 +8,25 @@ export default function Home() {
   const [enhancedImage, setEnhancedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [totalTime, setTotalTime] = useState(null);
   const [imageInfo, setImageInfo] = useState(null);
   const [settings, setSettings] = useState({
     scale: 4,
     format: 'png'
   });
-  // Learning component for time estimation
-  const [timeEstimateHistory, setTimeEstimateHistory] = useState(() => {
-    const saved = localStorage.getItem('enhanceTimeHistory');
-    return saved ? JSON.parse(saved) : [];
-  });
   const fileInputRef = useRef(null);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   const extractImageInfo = (file) => {
     return new Promise((resolve) => {
@@ -65,135 +72,58 @@ export default function Home() {
     setImageInfo(info);
   };
 
-  const updateTimeEstimateHistory = (imageInfo, scaleFactor, actualTime) => {
-    const newEntry = {
-      pixels: imageInfo.width * imageInfo.height,
-      scaleFactor,
-      actualTime,
-      format: imageInfo.format,
-      timestamp: Date.now()
-    };
-    
-    const updatedHistory = [...timeEstimateHistory, newEntry];
-    // Keep only last 50 entries to avoid storage bloat
-    const trimmedHistory = updatedHistory.slice(-50);
-    
-    setTimeEstimateHistory(trimmedHistory);
-    localStorage.setItem('enhanceTimeHistory', JSON.stringify(trimmedHistory));
+  const formatTime = (seconds) => {
+    if (seconds < 60) {
+      return `${seconds.toFixed(1)}s`;
+    } else {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds.toFixed(1)}s`;
+    }
   };
 
-  const getLearningAdjustment = (imageInfo, scaleFactor) => {
-    if (timeEstimateHistory.length < 3) return 1.0; // Not enough data
+  const startTimer = () => {
+    const startTime = Date.now();
+    startTimeRef.current = startTime;
+    setElapsedTime(0);
+    setTotalTime(null);
     
-    // Find similar images in history
-    const pixels = imageInfo.width * imageInfo.height;
-    const similarImages = timeEstimateHistory.filter(entry => {
-      const pixelDiff = Math.abs(entry.pixels - pixels) / pixels;
-      return pixelDiff < 0.5 && entry.scaleFactor === scaleFactor; // Within 50% pixel count and same scale
-    });
-    
-    if (similarImages.length === 0) return 1.0;
-    
-    // Calculate average actual vs estimated ratio
-    const adjustments = similarImages.map(entry => {
-      const estimatedForEntry = (entry.pixels / 1000000) * 15; // Basic estimate
-      return entry.actualTime / estimatedForEntry;
-    });
-    
-    const avgAdjustment = adjustments.reduce((sum, adj) => sum + adj, 0) / adjustments.length;
-    return Math.max(0.3, Math.min(3.0, avgAdjustment)); // Clamp between 0.3x and 3x
+    timerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setElapsedTime(elapsed);
+    }, 100); // Update every 100ms for smooth display
   };
 
-  const detectHardwareCapability = () => {
-    // Simple hardware detection based on available browser APIs
-    const hardwareInfo = {
-      cores: navigator.hardwareConcurrency || 4,
-      memory: navigator.deviceMemory || 4, // GB
-      connection: navigator.connection?.effectiveType || '4g'
-    };
-    
-    // Estimate hardware multiplier
-    let hardwareMultiplier = 1.0;
-    
-    // CPU cores factor
-    if (hardwareInfo.cores >= 8) hardwareMultiplier *= 0.7; // High-end CPU
-    else if (hardwareInfo.cores >= 4) hardwareMultiplier *= 0.85; // Mid-range CPU
-    else hardwareMultiplier *= 1.3; // Low-end CPU
-    
-    // Memory factor
-    if (hardwareInfo.memory >= 16) hardwareMultiplier *= 0.8; // High memory
-    else if (hardwareInfo.memory >= 8) hardwareMultiplier *= 0.9; // Good memory
-    else hardwareMultiplier *= 1.2; // Limited memory
-    
-    return hardwareMultiplier;
+  const stopTimer = () => {
+    if (timerRef.current && startTimeRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      
+      // Calculate final elapsed time
+      const finalElapsed = (Date.now() - startTimeRef.current) / 1000;
+      setTotalTime(finalElapsed);
+      startTimeRef.current = null;
+    }
   };
-
-  const calculateRealTimeEstimate = (imageInfo, scaleFactor) => {
-    const pixels = imageInfo.width * imageInfo.height;
-    const scaledPixels = pixels * (scaleFactor ** 2); // After scaling
-    
-    // Base processing time per million pixels (in seconds)
-    // These are realistic estimates based on RealESRGAN performance
-    const baseTimePerMegapixel = 15; // 15 seconds per million pixels on average CPU
-    
-    // Hardware capability factor
-    const hardwareMultiplier = detectHardwareCapability();
-    
-    // Learning adjustment based on historical data
-    const learningAdjustment = getLearningAdjustment(imageInfo, scaleFactor);
-    
-    // Complexity factors
-    let complexityMultiplier = 1.0;
-    
-    // Image size factor (larger images take disproportionately longer)
-    if (pixels > 2000000) complexityMultiplier *= 1.5; // 2MP+
-    if (pixels > 8000000) complexityMultiplier *= 2.0; // 8MP+
-    
-    // Scale factor impact (higher scales take longer)
-    const scaleMultiplier = {
-      2: 0.6,  // 2x is faster
-      4: 1.0,  // 4x is baseline
-      8: 2.5   // 8x takes much longer
-    }[scaleFactor] || 1.0;
-    
-    // File format complexity (JPEG compressed files might take longer to process)
-    const formatMultiplier = imageInfo.format?.includes('jpeg') ? 1.2 : 1.0;
-    
-    // Calculate estimate
-    const megapixels = scaledPixels / 1000000;
-    const estimatedTime = megapixels * baseTimePerMegapixel * complexityMultiplier * scaleMultiplier * formatMultiplier * hardwareMultiplier * learningAdjustment;
-    
-    // Clamp between reasonable bounds (10 seconds to 10 minutes)
-    return Math.max(10, Math.min(600, Math.round(estimatedTime)));
-  };
-
   const enhance = async () => {
     if (!selectedFile) return;
     setLoading(true);
     setProgress(0);
     
-    // Calculate realistic time estimate
-    const estimatedTimeSeconds = calculateRealTimeEstimate(imageInfo, settings.scale);
-    setTimeRemaining(estimatedTimeSeconds);
+    // Start the timer
+    startTimer();
     
-    const startTime = Date.now();
     let progressInterval;
     
-    // More realistic progress tracking
+    // Simple progress simulation
     const updateProgress = () => {
-      const elapsed = (Date.now() - startTime) / 1000; // seconds elapsed
-      const progressPercentage = Math.min(95, (elapsed / estimatedTimeSeconds) * 100);
-      
-      setProgress(progressPercentage);
-      
-      // Update remaining time based on actual progress
-      const remainingTime = Math.max(0, estimatedTimeSeconds - elapsed);
-      setTimeRemaining(remainingTime);
-      
-      // Continue updating until we reach 95% or the request completes
-      if (progressPercentage < 95) {
-        progressInterval = setTimeout(updateProgress, 1000);
-      }
+      setProgress(prev => {
+        const newProgress = Math.min(prev + Math.random() * 2, 95);
+        if (newProgress < 95) {
+          progressInterval = setTimeout(updateProgress, 500 + Math.random() * 1000);
+        }
+        return newProgress;
+      });
     };
     
     // Start progress tracking
@@ -211,7 +141,9 @@ export default function Home() {
       
       clearTimeout(progressInterval);
       setProgress(100);
-      setTimeRemaining(0);
+      
+      // Stop the timer
+      stopTimer();
       
       // Handle different formats for display and download
       if (settings.format === 'pdf') {
@@ -219,22 +151,15 @@ export default function Home() {
       } else {
         setEnhancedImage("data:image/png;base64," + res.data.image);
       }
-      
-      // Learn from actual processing time if metadata is available
-      if (res.data.metadata && res.data.metadata.processing_time) {
-        const actualTime = res.data.metadata.processing_time.total_time;
-        updateTimeEstimateHistory(imageInfo, settings.scale, actualTime);
-        console.log(`Actual processing time: ${actualTime}s vs estimated: ${estimatedTimeSeconds}s`);
-      }
     } catch (err) {
       console.error(err);
       clearTimeout(progressInterval);
+      stopTimer();
       alert("Enhancement failed. Please check the server and try again.");
     } finally {
       setLoading(false);
       setTimeout(() => {
         setProgress(0);
-        setTimeRemaining(null);
       }, 2000);
     }
   };
@@ -263,20 +188,19 @@ export default function Home() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatTime = (seconds) => {
-    if (seconds < 60) return `${Math.round(seconds)}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}m ${remainingSeconds}s`;
-  };
-
   const resetAll = () => {
     setSelectedFile(null);
     setOriginalImage(null);
     setEnhancedImage(null);
     setImageInfo(null);
     setProgress(0);
-    setTimeRemaining(null);
+    setElapsedTime(0);
+    setTotalTime(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    startTimeRef.current = null;
   };
 
   return (
@@ -403,11 +327,9 @@ export default function Home() {
           <div className="progress-section panel">
             <div className="progress-header">
               <h3>Enhancing Image...</h3>
-              {timeRemaining !== null && (
-                <span className="time-remaining">
-                  Est. time remaining: {formatTime(timeRemaining)}
-                </span>
-              )}
+              <span className="time-remaining">
+                Processing: {formatTime(elapsedTime)}
+              </span>
             </div>
             <div className="progress-bar">
               <div 
@@ -503,9 +425,29 @@ export default function Home() {
             )}
           </div>
 
+          {/* Show total time when enhancement is complete */}
+          {!loading && totalTime !== null && enhancedImage && (
+            <div className="completion-info">
+              <div className="completion-badge">
+                <svg className="check-icon" viewBox="0 0 24 24">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                Enhancement Complete!
+              </div>
+              <div className="total-time">
+                Total time: {formatTime(totalTime)}
+              </div>
+            </div>
+          )}
+
           {enhancedImage && (
             <div className="download-area">
-              <button className="btn success" onClick={downloadEnhanced}>
+              <button className="download-btn" onClick={downloadEnhanced}>
+                <svg className="download-icon" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7,10 12,15 17,10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
                 Download Enhanced
               </button>
             </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, NavLink, useLocation } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
@@ -7,10 +7,57 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 export default function App() {
   const location = useLocation();
+  const [navbarState, setNavbarState] = useState('default'); // 'default', 'floating', 'hidden'
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDifference = currentScrollY - lastScrollY;
+
+      if (currentScrollY < 20) {
+        // Near top - default floating state
+        setNavbarState('default');
+      } else if (scrollDifference > 5 && currentScrollY > 100) {
+        // Scrolling down - hide navbar
+        setNavbarState('hidden');
+      } else if (scrollDifference < -5) {
+        // Scrolling up - show floating navbar
+        setNavbarState('floating');
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    // Throttle scroll events for better performance
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', throttledScroll);
+    };
+  }, [lastScrollY]);
+
+  const getNavbarClasses = () => {
+    let classes = 'navbar';
+    if (navbarState === 'floating') classes += ' floating';
+    if (navbarState === 'hidden') classes += ' hidden';
+    return classes;
+  };
 
   return (
     <div className="site-shell">
-      <nav className="navbar">
+      <nav className={getNavbarClasses()}>
         <div className="nav-left">
           <span className="brand">AI Image Enhancer</span>
         </div>
