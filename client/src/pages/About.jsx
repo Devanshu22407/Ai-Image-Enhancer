@@ -64,6 +64,11 @@ export default function About() {
             <a href="mailto:devanshusheladiya407@gmail.com" className="developer-email">
               devanshusheladiya407@gmail.com
             </a>
+            <div className="developer-contact">
+              <a href="tel:+919313222407" className="developer-phone">
+                +91 93132 22407
+              </a>
+            </div>
           </div>
           <div className="developer-card">
             <div className="developer-avatar">MS</div>
@@ -72,6 +77,11 @@ export default function About() {
             <a href="mailto:mitangsheladiya156@gmail.com" className="developer-email">
               mitangsheladiya156@gmail.com
             </a>
+            <div className="developer-contact">
+              <a href="tel:+916353602287" className="developer-phone">
+                +91 63536 02287
+              </a>
+            </div>
           </div>
         </div>
         <div className="github-section">
