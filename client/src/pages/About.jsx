@@ -1,6 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 
 export default function About() {
+  const [openFAQ, setOpenFAQ] = useState(null);
+
+  const toggleFAQ = (index) => {
+    setOpenFAQ(openFAQ === index ? null : index);
+  };
+
+  const faqs = [
+    {
+      question: "What image formats does the AI enhancer support?",
+      answer: "Our advanced AI model supports all major image formats including PNG, JPEG, JPG, and WEBP. The system automatically detects the format and optimizes processing accordingly, ensuring consistent high-quality results across all supported file types."
+    },
+    {
+      question: "How does the AI enhancement process work?",
+      answer: "Our system utilizes the state-of-the-art RealESRGAN neural network, which employs deep learning algorithms for super-resolution image enhancement. The AI analyzes your image pixel by pixel, reconstructing fine details and improving clarity through advanced upscaling techniques."
+    },
+    {
+      question: "What security measures protect my uploaded images?",
+      answer: "Your privacy is our top priority. All image processing occurs entirely on your local device using client-side computation. No images are uploaded to external servers, stored in databases, or transmitted over the internet. Your data remains completely private and secure."
+    },
+    {
+      question: "What quality improvements can I expect from the enhancement?",
+      answer: "The AI delivers comprehensive improvements including up to 4x super-resolution upscaling, advanced noise reduction, enhanced detail reconstruction, improved sharpness and clarity, optimized contrast and color balance, and artifact removal for professional-grade results."
+    },
+    {
+      question: "Are there any technical limitations or requirements?",
+      answer: "The system works optimally with images up to 10MB in size. Processing time varies from 10-45 seconds depending on image complexity and resolution. Modern web browsers (Chrome, Firefox, Safari, Edge) are recommended for optimal performance and compatibility."
+    },
+    {
+      question: "Can I process multiple images simultaneously?",
+      answer: "Currently, our system processes images individually to ensure maximum quality and optimal resource allocation. This approach guarantees consistent, high-quality results for each enhancement. You can process multiple images sequentially through the interface."
+    }
+  ];
+
   return (
     <div className="container about fade-in">
       <h1>About This Project</h1>
@@ -94,8 +127,35 @@ export default function About() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="faq-section">
+        <h2>Frequently Asked Questions</h2>
+        <div className="faq-container">
+          {faqs.map((faq, index) => (
+            <div key={index} className="faq-item">
+              <button 
+                className="faq-question" 
+                onClick={() => toggleFAQ(index)}
+                aria-expanded={openFAQ === index}
+              >
+                <span>{faq.question}</span>
+                <svg 
+                  className={`faq-icon ${openFAQ === index ? 'rotated' : ''}`} 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <div className={`faq-answer ${openFAQ === index ? 'open' : ''}`}>
+                <p>{faq.answer}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <p className="note">
-        Go to Home, upload or drag & drop an image, and let AI handle the rest.
+        Ready to experience professional-grade AI image enhancement? Navigate to the Home page, upload your image via drag-and-drop or file selection, and let our advanced neural network transform your visuals with cutting-edge super-resolution technology.
       </p>
     </div>
   );
